@@ -1,73 +1,52 @@
-# Makefile
+# Makefile for both application and kernel module
 
-.PHONY: build clean docker-build execute run test rebuild help lint format docker-shell docker-clean docker-test
+.PHONY: all build clean docker-build app-build module-build help docker-shell docker-clean doc
 
 # Docker image name
 DOCKER_IMAGE := raspberrypi5-app-builder:latest
 
-# Build directory inside container
-BUILD_DIR := build
-
-# Executable name
-EXECUTABLE := hello_rpi_world
+# Build directories
+APP_BUILD_DIR := application/build
+MODULE_BUILD_DIR := kernel_module/build
 
 # Color codes
 GREEN := \033[0;32m
 NC := \033[0m # No Color
 
-default: build
+default: all
 
 help:
 	@echo -e "${GREEN}Available targets:${NC}"
-	@echo "  build        - Build the project"
-	@echo "  clean        - Clean the build directory"
-	@echo "  rebuild      - Clean and build the project"
-	@echo "  run          - Execute the built binary"
-	@echo "  test         - Run tests"
-	@echo "  lint         - Run cpplint"
-	@echo "  format       - Format the code using clang-format"
+	@echo "  all          - Build both application and kernel module"
+	@echo "  app-build    - Build only the application"
+	@echo "  module-build - Build only the kernel module"
+	@echo "  clean        - Clean all build directories"
 	@echo "  docker-shell - Open a shell inside the Docker container"
 	@echo "  docker-clean - Clean the Docker environment"
-	@echo "  docker-test  - Run tests inside the Docker container"
 	@echo "  help         - Display this help message"
 
-docker-build: clean 
-	@echo -e "${GREEN}Starting Docker build...${NC}"
+all: app-build module-build doc
+
+app-build:
+	@echo -e "${GREEN}Building application...${NC}"
 	docker run --rm -v ${PWD}:/workspace ${DOCKER_IMAGE} \
 		bash -c "set -e && \
 		source /opt/poky/environment-setup-cortexa76-poky-linux && \
-		cd /workspace && \
-		mkdir -p ${BUILD_DIR} && \
-		cd ${BUILD_DIR} && \
+		cd /workspace/application && \
+		mkdir -p build && \
+		cd build && \
 		cmake .. && \
 		make"
-	@echo -e "${GREEN}Docker build completed.${NC}"
+	@echo -e "${GREEN}Application build completed.${NC}"
 
-build: docker-build
-
-execute: build
-	@echo -e "${GREEN}Executing the built binary...${NC}"
+module-build:
+	@echo -e "${GREEN}Building kernel module...${NC}"
 	docker run --rm -v ${PWD}:/workspace ${DOCKER_IMAGE} \
-		bash -c "cd /workspace/${BUILD_DIR} && ./${EXECUTABLE}"
-	@echo -e "${GREEN}Execution completed.${NC}"
-
-run: execute
-
-test: build
-	@echo -e "${GREEN}Running tests...${NC}"
-	docker run --rm -v ${PWD}:/workspace ${DOCKER_IMAGE} \
-		bash -c "cd /workspace/${BUILD_DIR} && ctest"
-	@echo -e "${GREEN}Tests completed.${NC}"
-
-lint:
-	@echo -e "${GREEN}Running cpplint...${NC}"
-	cpplint --recursive src include lib tests
-	@echo -e "${GREEN}Linting completed.${NC}"
-
-format:
-	@echo -e "${GREEN}Formatting code using clang-format...${NC}"
-	find src include lib tests -name '*.cpp' -o -name '*.h' | xargs clang-format -i
-	@echo -e "${GREEN}Code formatting completed.${NC}"
+		bash -c "set -e && \
+		source /opt/poky/environment-setup-cortexa76-poky-linux && \
+		cd /workspace/kernel_module && \
+		make "
+	@echo -e "${GREEN}Kernel module build completed.${NC}"
 
 docker-shell:
 	@echo -e "${GREEN}Opening a shell inside the Docker container...${NC}"
@@ -78,15 +57,17 @@ docker-clean:
 	docker system prune -f
 	@echo -e "${GREEN}Docker environment cleaned.${NC}"
 
-docker-test: build
-	@echo -e "${GREEN}Running tests inside the Docker container...${NC}"
-	docker run --rm -v ${PWD}:/workspace ${DOCKER_IMAGE} \
-		bash -c "cd /workspace/${BUILD_DIR} && ctest"
-	@echo -e "${GREEN}Docker tests completed.${NC}"
-
 clean:
-	@echo -e "${GREEN}Cleaning build directory...${NC}"
-	rm -rf ${BUILD_DIR}/
+	@echo -e "${GREEN}Cleaning build directories...${NC}"
+	rm -rf ${APP_BUILD_DIR}/
+	rm -rf ${MODULE_BUILD_DIR}/
+	rm -rf doc/  # Remove the doc directory
 	@echo -e "${GREEN}Clean completed.${NC}"
 
-rebuild: clean build
+doc:
+	@echo -e "${GREEN}Generating documentation...${NC}"
+	docker run --rm -v ${PWD}:/workspace ${DOCKER_IMAGE} \
+		bash -c "set -e && \
+		cd /workspace && \
+		doxygen"
+	@echo -e "${GREEN}Documentation generated in ./doc.${NC}"

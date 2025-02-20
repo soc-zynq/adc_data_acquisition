@@ -1,0 +1,44 @@
+# Doxyfile 1.9.1
+
+## Project related configuration options
+
+PROJECT_NAME = ADC Data Acquisition
+PROJECT_NUMBER = 1.0
+PROJECT_BRIEF = Documentation for the ADC Data Acquisition project
+PROJECT_LOGO = # Path to a project logo if you have one
+OUTPUT_DIRECTORY = doc
+
+## Build related configuration options
+
+INPUT = ./application ./kernel*module
+RECURSIVE = YES
+FILE_PATTERNS = *.c \_.h \*.cpp
+
+## HTML output configuration options
+
+GENERATE_HTML = YES
+HTML_OUTPUT = html
+HTML_FILE_EXTENSION = .html
+HTML_COLORSTYLE_HUE = 220
+HTML_COLORSTYLE_SAT = 100
+HTML_COLORSTYLE_GAMMA = 80
+
+## LaTeX output configuration options
+
+GENERATE_LATEX = NO
+
+## Man page output configuration options
+
+GENERATE_MAN = NO
+
+## XML output configuration options
+
+GENERATE_XML = NO
+
+## Disable RTF output
+
+GENERATE_RTF = NO
+
+## Enable the EXTRACT_ALL option
+
+EXTRACT_ALL = YES
